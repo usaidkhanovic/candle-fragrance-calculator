@@ -125,6 +125,7 @@
             font-weight: 600;
         }
 
+        /* Media query for devices with width less than 600px */
         @media (max-width: 600px) {
             .calculator {
                 width: 100%;
@@ -137,6 +138,33 @@
             .result-item {
                 width: 100%;
                 margin-bottom: 10px;
+            }
+        }
+
+        /* Media query for devices with width less than 400px (smaller mobile screens) */
+        @media (max-width: 400px) {
+            h1 {
+                font-size: 1.2em; /* Make the title font size smaller */
+            }
+
+            label {
+                font-size: 0.9em; /* Make label text smaller */
+            }
+
+            .result-label, .unit-label {
+                font-size: 0.9em; /* Adjust result label and unit label size */
+            }
+
+            .result-number {
+                font-size: 1em; /* Adjust the result number font size */
+            }
+
+            input[type="number"], select {
+                width: 100%; /* Make the number inputs and select take full width */
+            }
+
+            .calculator {
+                padding: 15px; /* Reduce padding for smaller screens */
             }
         }
     </style>

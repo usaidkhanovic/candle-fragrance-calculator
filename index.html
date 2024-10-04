@@ -14,7 +14,7 @@
             background-color: #FFFFFF;
             padding: 20px;
             margin: 0;
-            color: #000000;
+            color: #000000; /* Changed text color to black for visibility */
             min-height: 100vh;
             box-sizing: border-box;
         }
@@ -50,7 +50,7 @@
 
         input[type="range"] {
             width: 100%;
-            accent-color: #BF8BFF;
+            accent-color: #BF8BFF; /* Updated slider color */
         }
 
         input[type="number"] {
@@ -92,8 +92,8 @@
             width: 30%;
             padding: 10px;
             position: relative;
-            border: 0.5px solid #ddd;
-            border-radius: 5px;
+            border: 0.5px solid #ddd; /* Added border */
+            border-radius: 5px; /* Optional: Rounded corners for aesthetics */
         }
 
         .result-item i {
@@ -111,7 +111,7 @@
         }
 
         .result-number {
-            color: #BF8BFF;
+            color: #BF8BFF; /* Updated results number color */
             font-weight: bold;
             font-size: 1.2em;
             margin-top: 10px;
@@ -120,12 +120,24 @@
         .unit-label {
             font-size: 1em;
             color: #333333;
-            text-align: left;
-            margin-top: 5px;
-            font-weight: 600;
+            text-align: left; /* Left align the unit label */
+            margin-top: 5px; /* Add some space above the unit label */
+            font-weight: 600; /* Increase the weight of the unit label */
         }
 
-        /* Media query for devices with width less than 600px */
+        #chartContainer {
+            margin-top: 20px;
+            width: 80%; /* Smaller size */
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
         @media (max-width: 600px) {
             .calculator {
                 width: 100%;
@@ -136,39 +148,15 @@
             }
 
             .result-item {
-                width: 100%;
-                margin-bottom: 10px;
-            }
-        }
-
-        /* Media query for devices with width less than 400px (smaller mobile screens) */
-        @media (max-width: 400px) {
-            h1 {
-                font-size: 1.2em; /* Make the title font size smaller */
-            }
-
-            label {
-                font-size: 0.9em; /* Make label text smaller */
-            }
-
-            .result-label, .unit-label {
-                font-size: 0.9em; /* Adjust result label and unit label size */
-            }
-
-            .result-number {
-                font-size: 1em; /* Adjust the result number font size */
-            }
-
-            input[type="number"], select {
-                width: 100%; /* Make the number inputs and select take full width */
-            }
-
-            .calculator {
-                padding: 15px; /* Reduce padding for smaller screens */
+                width: 100%; /* Each item takes full width on mobile */
+                margin-bottom: 10px; /* Add some space between each item */
             }
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        let updateChartTimeout;
+
         window.onload = function () {
             calculate(); // Call calculate to display initial values
         }
@@ -238,15 +226,49 @@
             document.getElementById('fragranceAmount').innerHTML = `<span class="result-number">${fragranceOilWeight.toFixed(2)}</span>`;
             document.getElementById('totalWeight').innerHTML = `<span class="result-number">${totalWeight.toFixed(2)}</span>`;
 
+            // Move the unit labels under the results
             document.getElementById('waxWeightUnit').innerHTML = unitLabel;
             document.getElementById('fragranceUnit').innerHTML = unitLabel;
             document.getElementById('totalWeightUnit').innerHTML = unitLabel;
+
+            clearTimeout(updateChartTimeout);
+            updateChartTimeout = setTimeout(() => updateChart(adjustedWaxWeight, fragranceOilWeight), 200);
+        }
+
+        function updateChart(waxWeight, fragranceWeight) {
+            let ctx = document.getElementById('myChart').getContext('2d');
+            if (window.myPieChart) {
+                window.myPieChart.destroy();
+            }
+            window.myPieChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Wax', 'Fragrance Oil'],
+                    datasets: [{
+                        data: [waxWeight, fragranceWeight],
+                        backgroundColor: ['#BF8BFF', '#ffc107'], /* Updated chart main color */
+                        borderColor: ['#ffffff', '#ffffff'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#000'
+                            }
+                        }
+                    }
+                }
+            });
         }
     </script>
 </head>
 <body>
     <div class="calculator">
-        <div class="slider-container">
+                <div class="slider-container">
             <label for="waxWeight" aria-label="Wax Weight">Wax Weight (grams): <span id="waxWeightValue" class="value-display">100</span></label>
             <input type="range" id="waxWeight" min="1" max="2000" value="100" oninput="updateValueDisplay('waxWeight', 'waxWeightValue')">
             <input type="number" id="waxWeightInput" value="100" min="1" max="2000" oninput="updateSlider('waxWeight', 'waxWeightInput')">
@@ -290,6 +312,10 @@
                 <div id="totalWeight" class="result-number">0</div>
                 <div id="totalWeightUnit" class="unit-label">grams</div>
             </div>
+        </div>
+
+        <div id="chartContainer">
+            <canvas id="myChart"></canvas>
         </div>
     </div>
 </body>

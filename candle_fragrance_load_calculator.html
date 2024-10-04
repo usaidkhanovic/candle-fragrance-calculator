@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candle Fragrance Load Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #FFFFFF;
+            padding: 20px;
+            margin: 0;
+            color: #ffffff;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .calculator {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.2);
+            width: 100%;
+            max-width: 500px;
+            color: #000000;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            color: #000000;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        label {
+            font-size: 1em;
+            color: #333333;
+            margin-top: 10px;
+            display: block;
+            text-align: left;
+        }
+
+        .slider-container {
+            margin-bottom: 10px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: #BF8BFF; /* Updated slider color */
+        }
+
+        input[type="number"] {
+            width: 80px;
+            padding: 5px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #000000;
+            color: #ffffff;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        select:hover {
+            background-color: #333333;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        button {
+            width: 48%;
+            background-color: #000000;
+            color: #ffffff;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #555555;
+        }
+
+        #results-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .result-item {
+            text-align: left;
+            width: 30%;
+            padding: 10px;
+            position: relative;
+        }
+
+        .result-item i {
+            font-size: 1.2em;
+            color: #000000;
+            margin-bottom: 10px;
+        }
+
+        .result-label {
+            margin-top: 10px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            color: #333333;
+            font-weight: bold;
+        }
+
+        .result-number {
+            color: #BF8BFF; /* Updated results number color */
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+
+        .result-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+            width: 1px;
+            background-color: #ddd;
+        }
+
+        #chartContainer {
+            margin-top: 20px;
+            width: 80%; /* Smaller size */
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        @media (max-width: 600px) {
+            .calculator {
+                width: 100%;
+            }
+
+            #results-container {
+                flex-direction: column;
+            }
+
+            .result-item {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let updateChartTimeout;
+
+        window.onload = function () {
+            calculate();
+        }
+
+        function updateValueDisplay(sliderId, displayId) {
+            let value = document.getElementById(sliderId).value;
+            document.getElementById(displayId).textContent = value;
+            document.getElementById(sliderId + "Input").value = value;
+            calculate();
+        }
+
+        function updateSlider(sliderId, inputId) {
+            let value = document.getElementById(inputId).value;
+            document.getElementById(sliderId).value = value;
+            document.getElementById(sliderId + "Value").textContent = value;
+            calculate();
+        }
+
+        function validateInputs() {
+            let waxWeightInput = document.getElementById('waxWeightInput').value;
+            let fragranceLoadInput = document.getElementById('fragranceLoadInput').value;
+            let waxGravityInput = document.getElementById('waxGravityInput').value;
+
+            if (waxWeightInput < 50 || waxWeightInput > 1000 || isNaN(waxWeightInput)) {
+                alert("Please enter a valid wax weight between 50 and 1000 grams.");
+                return false;
+            }
+            if (fragranceLoadInput < 1 || fragranceLoadInput > 100 || isNaN(fragranceLoadInput)) {
+                alert("Please enter a valid fragrance load between 1% and 100%.");
+                return false;
+            }
+            if (waxGravityInput < 0.70 || waxGravityInput > 1.00 || isNaN(waxGravityInput)) {
+                alert("Please enter a valid wax gravity between 0.70 and 1.00.");
+                return false;
+            }
+
+            return true;
+        }
+
+        function calculate() {
+            if (!validateInputs()) return;
+
+            let waxWeight = parseFloat(document.getElementById('waxWeight').value);
+            let fragranceLoad = parseFloat(document.getElementById('fragranceLoad').value) / 100;
+            let waxGravity = parseFloat(document.getElementById('waxGravity').value);
+            let unit = document.getElementById('unit').value;
+
+            let conversionFactor = 1;
+            if (unit === "ounces") {
+                conversionFactor = 28.3495;
+            } else if (unit === "pounds") {
+                conversionFactor = 453.592;
+            }
+
+            waxWeight *= conversionFactor;
+
+            let totalWeight = waxWeight * waxGravity;
+            let adjustedWaxWeight = totalWeight / (1 + fragranceLoad);
+            let fragranceOilWeight = adjustedWaxWeight * fragranceLoad;
+
+            totalWeight /= conversionFactor;
+            adjustedWaxWeight /= conversionFactor;
+            fragranceOilWeight /= conversionFactor;
+
+            let unitLabel = unit === "grams" ? "grams" : (unit === "ounces" ? "oz" : "lbs");
+            document.getElementById('waxWeightResult').innerHTML = `<span class="result-number">${adjustedWaxWeight.toFixed(2)}</span> ${unitLabel}`;
+            document.getElementById('fragranceAmount').innerHTML = `<span class="result-number">${fragranceOilWeight.toFixed(2)}</span> ${unitLabel}`;
+            document.getElementById('totalWeight').innerHTML = `<span class="result-number">${totalWeight.toFixed(2)}</span> ${unitLabel}`;
+
+            clearTimeout(updateChartTimeout);
+            updateChartTimeout = setTimeout(() => updateChart(adjustedWaxWeight, fragranceOilWeight), 200);
+        }
+
+        function updateChart(waxWeight, fragranceWeight) {
+            let ctx = document.getElementById('myChart').getContext('2d');
+            if (window.myPieChart) {
+                window.myPieChart.destroy();
+            }
+            window.myPieChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Wax', 'Fragrance Oil'],
+                    datasets: [{
+                        data: [waxWeight, fragranceWeight],
+                        backgroundColor: ['#BF8BFF', '#ffc107'], /* Updated chart main color */
+                        borderColor: ['#ffffff', '#ffffff'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#000'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function resetCalculator() {
+            document.getElementById('waxWeight').value = 100;
+            document.getElementById('fragranceLoad').value = 6;
+            document.getElementById('waxGravity').value = 0.86;
+            document.getElementById('unit').value = "grams";
+
+            document.getElementById('waxWeightValue').textContent = 100;
+            document.getElementById('fragranceLoadValue').textContent = 6;
+            document.getElementById('waxGravityValue').textContent = 0.86;
+
+            document.getElementById('waxWeightInput').value = 100;
+            document.getElementById('fragranceLoadInput').value = 6;
+            document.getElementById('waxGravityInput').value = 0.86;
+
+            calculate();
+        }
+    </script>
+</head>
+<body>
+    <div class="calculator">
+        <h1>Candle Fragrance Load Calculator</h1>
+
+        <div class="slider-container">
+            <label for="waxWeight" aria-label="Wax Weight">Wax Weight (grams): <span id="waxWeightValue" class="value-display">100</span></label>
+            <input type="range" id="waxWeight" min="50" max="1000" value="100" oninput="updateValueDisplay('waxWeight', 'waxWeightValue')">
+            <input type="number" id="waxWeightInput" value="100" min="50" max="1000" oninput="updateSlider('waxWeight', 'waxWeightInput')">
+        </div>
+
+        <div class="slider-container">
+            <label for="fragranceLoad" aria-label="Fragrance Load">Fragrance Load (%): <span id="fragranceLoadValue" class="value-display">6</span></label>
+            <input type="range" id="fragranceLoad" min="1" max="100" value="6" oninput="updateValueDisplay('fragranceLoad', 'fragranceLoadValue')">
+            <input type="number" id="fragranceLoadInput" value="6" min="1" max="100" oninput="updateSlider('fragranceLoad', 'fragranceLoadInput')">
+        </div>
+
+        <div class="slider-container">
+            <label for="waxGravity" aria-label="Wax Gravity">Wax Gravity (default 0.86): <span id="waxGravityValue" class="value-display">0.86</span></label>
+            <input type="range" id="waxGravity" min="0.70" max="1.00" step="0.01" value="0.86" oninput="updateValueDisplay('waxGravity', 'waxGravityValue')">
+            <input type="number" id="waxGravityInput" value="0.86" min="0.70" max="1.00" step="0.01" oninput="updateSlider('waxGravity', 'waxGravityInput')">
+        </div>
+
+        <label for="unit" aria-label="Select Unit">Select Unit:</label>
+        <select id="unit" onchange="calculate()">
+            <option value="grams">Grams</option>
+            <option value="ounces">Ounces</option>
+            <option value="pounds">Pounds</option>
+        </select>
+
+        <div class="button-container">
+            <button type="button" onclick="calculate()">Calculate</button>
+            <button type="button" onclick="resetCalculator()">Reset</button>
+        </div>
+
+        <div id="results-container">
+            <div class="result-item">
+                <i class="fas fa-cube"></i>
+                <div class="result-label">Wax</div>
+                <div id="waxWeightResult" class="result-number">0 grams</div>
+            </div>
+            <div class="result-item">
+                <i class="fas fa-vial"></i>
+                <div class="result-label">Fragrance</div>
+                <div id="fragranceAmount" class="result-number">0 grams</div>
+            </div>
+            <div class="result-item">
+                <i class="fas fa-balance-scale"></i>
+                <div class="result-label">Total</div>
+                <div id="totalWeight" class="result-number">0 grams</div>
+            </div>
+        </div>
+
+        <div id="chartContainer">
+            <canvas id="myChart"></canvas>
+        </div>
+    </div>
+</body>
+</html>
